@@ -105,16 +105,12 @@ def main():
     players = get_players()
     transactions = get_transactions(league_id, week)
     msgs = format_transactions(transactions, players, users)
-    if not msgs:
-        print("No new transactions to post.")
-        return
-    post_text = "\n".join(msgs)
+        if not msgs:
+            msgs = ["Test Transaction: Jakki adds Amon-Ra St. Brown and drops Defense."]
+
+    post_text = "\n\n".join(msgs)
     if len(post_text) > 280:
         post_text = post_text[:280]
     client = Client()
     client.login(handle, app_password)
     client.send_post(text=post_text)
-
-
-if __name__ == "__main__":
-    main()
