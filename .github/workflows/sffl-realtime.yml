@@ -2,7 +2,7 @@ name: SFFL Beat Reporter (Realtime)
 
 on:
   schedule:
-    - cron: "*/25 * * * *"
+    - - cron: "*/5 * * * *"
   workflow_dispatch:
 
 jobs:
