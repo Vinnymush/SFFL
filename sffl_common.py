@@ -174,3 +174,52 @@ def state_save(posted_ids: Set[str]) -> None:
             os.environ["GH_GIST_ID"] = new_id
     except Exception as e:
         print(f"State save skipped: {e}", file=sys.stderr)
+
+
+                               # ---------- Optional players cache via Gist ----------
+def players_cache_load(max_age_hours: int = 24) -> dict | None:
+    tok = os.getenv("GH_TOKEN")
+    gid = os.getenv("GH_GIST_ID")
+    if not tok or not gid:
+        return None
+    try:
+        r = requests.get(f"https://api.github.com/gists/{gid}", headers=_gist_headers(), timeout=20)
+        r.raise_for_status()
+        files = r.json().get("files", {})
+        meta_raw = files.get("players_meta.json", {}).get("content", "")
+        data_raw = files.get("players.json", {}).get("content", "")
+        if not meta_raw or not data_raw:
+            return None
+        meta = json.loads(meta_raw)
+        ts = meta.get("updated_ms", 0)
+        if (int(time.time()*1000) - ts) > max_age_hours*3600*1000:
+            return None
+        return json.loads(data_raw)
+    except Exception as e:
+        print(f"Players cache load skipped: {e}", file=sys.stderr)
+        return None
+
+def players_cache_save(players: dict) -> None:
+    tok = os.getenv("GH_TOKEN")
+    gid = os.getenv("GH_GIST_ID")
+    if not tok:
+        return
+    payload = {
+        "files": {
+            "players.json": {"content": json.dumps(players)},
+            "players_meta.json": {"content": json.dumps({"updated_ms": int(time.time()*1000)})}
+        }
+    }
+    try:
+        if gid:
+            r = requests.patch(f"https://api.github.com/gists/{gid}", headers=_gist_headers(), json=payload, timeout=30)
+            r.raise_for_status()
+        else:
+            create = {"description": "SFFL Beat Reporter state", "public": False, "files": payload["files"]}
+            r = requests.post("https://api.github.com/gists", headers=_gist_headers(), json=create, timeout=30)
+            r.raise_for_status()
+            new_id = r.json().get("id")
+            print(f"Created Gist state store for players: {new_id}")
+            os.environ["GH_GIST_ID"] = new_id
+    except Exception as e:
+        print(f"Players cache save skipped: {e}", file=sys.stderr)
