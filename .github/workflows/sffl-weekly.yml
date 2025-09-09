@@ -1,0 +1,27 @@
+name: SFFL Weekly Rumor Central (Wed 8pm ET)
+
+on:
+  schedule:
+    - cron: "0 0 * * 4"   # Wed 20:00 ET during EDT -> Thu 00:00 UTC
+    - cron: "0 1 * * 4"   # Wed 20:00 ET during EST -> Thu 01:00 UTC
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run weekly rumors
+        env:
+          SLEEPER_LEAGUE_ID: ${{ secrets.SLEEPER_LEAGUE_ID }}
+          BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
+          BSKY_APP_PASSWORD: ${{ secrets.BSKY_APP_PASSWORD }}
+          DRY_RUN: "0"
+          DEBUG: "0"
+        run: python sffl_bsky_weekly_rumors.py
